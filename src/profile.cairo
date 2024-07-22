@@ -2,8 +2,9 @@ use starknet::ContractAddress;
 use super::imports::{UsersInfo, Status};
 
 #[starknet::interface]
-pub trait profile<TContractState> { fn upload(ref self: TContractState, name: felt252, bio: felt252,  status: Status);
-fn reveal(self: @TContractState)-> UsersInfo;
+pub trait profile<TContractState> {
+    fn upload(ref self: TContractState, name: felt252, bio: felt252, status: Status);
+    fn reveal(self: @TContractState) -> UsersInfo;
 }
 
 #[starknet::contract]
@@ -18,19 +19,26 @@ pub mod Profile {
     struct Storage {
         userInfo: LegacyMap::<ContractAddress, UsersInfo>
     }
-   
+
     #[abi(embed_v0)]
     impl profileImpl of super::profile<ContractState> {
-    fn upload(ref self: ContractState, name: felt252, bio: felt252,  status: Status){
-        let data = UsersInfo{
-            name, bio, status
-        };
-        let user = get_caller_address();
-        self.userInfo.write(user, data);
-    }
+        fn upload(ref self: ContractState, name: felt252, bio: felt252, status: Status) {
+            match status {
+                Status::Married(num) => {
+                    let data = UsersInfo { name, bio, status: Status::Married(num) };
+                    let user = get_caller_address();
+                    self.userInfo.write(user, data);
+                },
+                Status::Single(num) => {
+                    let data = UsersInfo { name, bio, status: Status::Single(num) };
+                    let user = get_caller_address();
+                    self.userInfo.write(user, data);
+                }
+            }
+        }
 
-     fn reveal(self: @ContractState)->UsersInfo {
-        self.userInfo.read(get_caller_address())
-     }
+        fn reveal(self: @ContractState) -> UsersInfo {
+            self.userInfo.read(get_caller_address())
+        }
     }
 }
